@@ -9,3 +9,18 @@ GET http://127.0.0.1:8000/hello/User
 Accept: application/json
 
 ###
+
+GET http://127.0.0.1:8000/items/5?q=somequery
+Accept: application/json
+
+###
+
+POST http://127.0.0.1:8000/items/5?q=somequery
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+###
