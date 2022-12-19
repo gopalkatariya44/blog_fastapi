@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, status
+from fastapi import FastAPI, Depends, status, HTTPException
 from . import schemas, models
 from .database import engine, SessionLocal
 from sqlalchemy.orm import Session
@@ -34,7 +34,19 @@ def get_blog(db: Session = Depends(get_db)):
 
 @app.delete('/blog/{id}')
 def delete_blog(id: int, db: Session = Depends(get_db)):
-    db.query(models.Blog).filter(id == models.Blog.id).delete(synchronize_session=False)
-    db.commit()
-    return f"blog {id} deleted successful"
+    data = db.query(models.Blog).filter(id == models.Blog.id).delete(synchronize_session=False)
+    if not data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'data {id} is not available')
+    else:
+        db.commit()
+        return f"blog {id} deleted successful"
 
+
+@app.put('/blog/{id}')
+def update_blog(id, request: schemas.Blog, db: Session = Depends(get_db)):
+    data = db.query(models.Blog).filter(id == models.Blog.id).update(request.dict())
+    if not data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'data {id} is not available')
+    else:
+        db.commit()
+        return f"blog {id} update successful"
