@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Depends, status, HTTPException
-from . import schemas, models
-from .database import engine, SessionLocal
+from fastapi import FastAPI, Depends, status, HTTPException, Response
 from sqlalchemy.orm import Session
+from typing import List
+
+from blog import schemas, models
+from blog.database import engine, SessionLocal
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -26,27 +28,41 @@ def create(request: schemas.Blog, db: Session = Depends(get_db)):
     # return {'title': request.title, 'body': request.body}
 
 
-@app.get('/blog', status_code=status.HTTP_200_OK)
+@app.get('/blog', status_code=status.HTTP_200_OK, response_model=List[schemas.ShowBlog])
 def get_blog(db: Session = Depends(get_db)):
     blog = db.query(models.Blog).all()
     return blog
 
 
+# for getting a single blog
+@app.get('/blog/{id}', status_code=status.HTTP_200_OK, response_model=schemas.ShowBlog)
+def get_single_blog(id, response: Response, db: Session = Depends(get_db)):
+    blog = db.query(models.Blog).filter(models.Blog.id == id).first()
+    if not blog:
+        # response.status_code = status.HTTP_404_NOT_FOUND
+        # return {'msg': f'Blog with the id {id} not exist.'}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Blog with the id {id} not exist.')
+    return blog
+
+
+# for deleting a blog
 @app.delete('/blog/{id}')
 def delete_blog(id: int, db: Session = Depends(get_db)):
-    data = db.query(models.Blog).filter(id == models.Blog.id).delete(synchronize_session=False)
+    data = db.query(models.Blog).filter(id == models.Blog.id)
     if not data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'data {id} is not available')
     else:
+        data.delete(synchronize_session=False)
         db.commit()
         return f"blog {id} deleted successful"
 
 
 @app.put('/blog/{id}')
 def update_blog(id, request: schemas.Blog, db: Session = Depends(get_db)):
-    data = db.query(models.Blog).filter(id == models.Blog.id).update(request.dict())
-    if not data:
+    data = db.query(models.Blog).filter(id == models.Blog.id)
+    if not data.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'data {id} is not available')
     else:
+        data.update(request.dict())
         db.commit()
         return f"blog {id} update successful"
