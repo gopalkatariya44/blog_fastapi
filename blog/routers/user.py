@@ -1,49 +1,33 @@
 from typing import List
-from fastapi import APIRouter,Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 
 from blog import schemas, models
+from blog.dao import user
 from blog.database import get_db
 from blog.hashing import Hash
 
-router = APIRouter()
+router = APIRouter(
+    prefix='/user',
+    tags=['users']
+)
 
 
-@router.get('/user', tags=['users'], status_code=status.HTTP_200_OK, response_model=List[schemas.ShowUser])
+@router.get('/', status_code=status.HTTP_200_OK, response_model=List[schemas.ShowUser])
 def get_user(db: Session = Depends(get_db)):
-    users = db.query(models.User).all()
-    if not users:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='users not available')
-    else:
-        return users
+    return user.get_all_users(db)
 
 
-@router.post('/user', tags=['users'], response_model=schemas.ShowUser)
+@router.post('/', response_model=schemas.ShowUser)
 def create_user(request: schemas.User, db: Session = Depends(get_db)):
-    new_user = models.User(name=request.name,
-                           email=request.email,
-                           password=Hash.bcrypt(request.password))
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+    return user.create_user(request, db)
 
 
-@router.get('/user/{id}', tags=['users'], response_model=schemas.ShowUser)
-def get_user(id: int, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.id == id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with the {id} is not available")
-    else:
-        return user
+@router.get('/{user_id}', response_model=schemas.ShowUser)
+def get_one_user(user_id: int, db: Session = Depends(get_db)):
+    return user.get_one_user(user_id, db)
 
 
-@router.delete('/user/{id}', tags=['users'])
-def delete_user(id: int, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.id == id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'user {id} is not available')
-    else:
-        user.delete(synchronize_session=False)
-        db.commit()
-        return f"user {id} deleted successful"
+@router.delete('/{user_id}')
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    return user.delete_user(user_id, db)
