@@ -2,7 +2,7 @@
 
 ### Run this api
 ```
-uvicorn blog.main:app --reload
+python main.py
 ```
 
 <details><summary>kill port in mac</summary>

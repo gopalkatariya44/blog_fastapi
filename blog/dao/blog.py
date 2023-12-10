@@ -5,8 +5,8 @@ from blog import models, schemas
 
 
 # TODO: create
-def create_blog(request: schemas.Blog, db: Session):
-    new_blog = models.Blog(title=request.title, body=request.body, user_id=3)
+def create_blog(request: schemas.Blog, db: Session, id):
+    new_blog = models.Blog(title=request.title, body=request.body, id=id)
     db.add(new_blog)
     db.commit()
     db.refresh(new_blog)

@@ -29,5 +29,6 @@ def verify_token(token: str, credentials_exception):
             raise credentials_exception
         # token_scopes = payload.get("scopes", [])
         token_data = schemas.TokenData(email=email)
+        return token_data
     except (JWTError, ValidationError):
         raise credentials_exception
